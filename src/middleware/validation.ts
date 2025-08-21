@@ -1,37 +1,67 @@
-// src/middleware/validation.ts
-
 import { Request, Response, NextFunction } from 'express';
-import { ZodSchema, ZodError } from 'zod';
+import { ZodError, ZodTypeAny } from 'zod';
 import { sendValidationError } from '../utils/response';
 
+/**
+ * Validates request body against a Zod schema
+ * @param schema - Zod schema to validate against
+ * @returns Express middleware function
+ */
 export const validateBody =
-  (schema: ZodSchema) =>
+  <S extends ZodTypeAny>(schema: S) =>
   (req: Request, res: Response, next: NextFunction): void => {
     try {
-      req.body = schema.parse(req.body);
+      // Parse and validate the request body
+      const parsed = schema.parse(req.body);
+
+      // Replace req.body with parsed/sanitized data
+      req.body = parsed;
+
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        const errors = error.errors.map((err) => err.message);
-        sendValidationError(res, errors);
+        const validationDetails = error.errors.map((err) => ({
+          path: err.path.join('.') || 'body',
+          message: err.message,
+        }));
+
+        sendValidationError(res, validationDetails);
         return;
       }
+
+      // Pass unexpected errors to error handler
       next(error);
     }
   };
 
+/**
+ * Validates route parameters against a Zod schema
+ * @param schema - Zod schema to validate against
+ * @returns Express middleware function
+ */
 export const validateParams =
-  (schema: ZodSchema) =>
+  <S extends ZodTypeAny>(schema: S) =>
   (req: Request, res: Response, next: NextFunction): void => {
     try {
-      req.params = schema.parse(req.params);
+      // Parse and validate route parameters
+      const parsed = schema.parse(req.params);
+
+      // Replace req.params with parsed/sanitized data
+      req.params = parsed;
+
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        const errors = error.errors.map((err) => err.message);
-        sendValidationError(res, errors);
+        const validationDetails = error.errors.map((err) => ({
+          path: err.path.join('.') || 'params',
+          message: err.message,
+        }));
+
+        sendValidationError(res, validationDetails);
         return;
       }
+
+      // Pass unexpected errors to error handler
       next(error);
     }
-  }; 
+  };

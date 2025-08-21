@@ -2,23 +2,41 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { sendError } from '../utils/response';
+import { BaseError } from '../common/errors';
+import logger from '../utils/logger';
 import { env } from '../config/env';
 
 export const errorHandler = (
   error: Error,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ): Response => {
-  console.error('Error:', error.message);
-  console.error('Stack:', error.stack);
+  // Log the error with context
+  logger.error('Application error', {
+    method: req.method,
+    url: req.url,
+    error: error.message,
+    stack: error.stack,
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    body: req.body,
+    params: req.params,
+    query: req.query,
+  });
 
-  return sendError(
-    res,
-    'Internal server error',
-    500,
-    env.NODE_ENV === 'development' ? error.message : undefined
-  );
+  // Handle custom errors
+  if (error instanceof BaseError) {
+    return sendError(res, error.message, error.statusCode, error.errorCode);
+  }
+
+  // Handle unknown errors
+  const message =
+    env.NODE_ENV === 'production'
+      ? 'Internal server error'
+      : error.message;
+
+  return sendError(res, message, 500, 'INTERNAL_ERROR');
 };
 
 export const notFoundHandler = (
@@ -26,5 +44,16 @@ export const notFoundHandler = (
   res: Response,
   _next: NextFunction
 ): Response => {
-  return sendError(res, `Route ${req.originalUrl} not found`, 404);
-}; 
+  logger.warn('Route not found', {
+    method: req.method,
+    url: req.originalUrl,
+    ip: req.ip,
+  });
+
+  return sendError(
+    res,
+    `Route ${req.originalUrl} not found`,
+    404,
+    'ROUTE_NOT_FOUND'
+  );
+};

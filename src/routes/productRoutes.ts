@@ -1,40 +1,31 @@
 // src/routes/productRoutes.ts
 
 import { Router } from 'express';
-import {
-  getAllProducts,
-  getProductById,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-} from '../controllers/productController';
-import { validateBody, validateParams } from '../middleware/validation';
+
 import {
   createProductSchema,
   updateProductSchema,
-  idParamSchema,
-} from '../schemas';
+} from '../schemas/product.schema';
+import { productController as controller } from '../container';
+import { idParamSchema } from '../schemas/common.schema';
+import { validateBody, validateParams } from '../middleware/validation';
 
 const router = Router();
 
-// GET /api/products - Get all products
-router.get('/', getAllProducts);
-
-// GET /api/products/:id - Get product by ID
-router.get('/:id', validateParams(idParamSchema), getProductById);
-
-// POST /api/products - Create new product
-router.post('/', validateBody(createProductSchema), createProduct);
-
-// PUT /api/products/:id - Update product
+router.get('/', controller.getAll);
+router.get('/:id', validateParams(idParamSchema), controller.getById);
+router.get(
+  '/:id/category',
+  validateParams(idParamSchema),
+  controller.getWithCategory
+);
+router.post('/', validateBody(createProductSchema), controller.create);
 router.put(
   '/:id',
   validateParams(idParamSchema),
   validateBody(updateProductSchema),
-  updateProduct
+  controller.update
 );
+router.delete('/:id', validateParams(idParamSchema), controller.delete);
 
-// DELETE /api/products/:id - Delete product
-router.delete('/:id', validateParams(idParamSchema), deleteProduct);
-
-export default router; 
+export default router;

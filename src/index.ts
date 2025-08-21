@@ -1,25 +1,28 @@
-// src/index.ts
-
 import createApp from './app';
 import { env } from './config/env';
+import logger from './utils/logger';
 
 const { PORT, NODE_ENV } = env;
 
-const startServer = (): void => {
+const startServer = () => {
   try {
     const app = createApp();
 
     const server = app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT} in ${NODE_ENV} mode`);
-      console.log(`📱 Health check: http://localhost:${PORT}/health`);
-      console.log(`📚 API Base URL: http://localhost:${PORT}/api`);
+      logger.info('Server started successfully', {
+        port: PORT,
+        environment: NODE_ENV,
+        healthCheck: `http://localhost:${PORT}/health`,
+        apiBaseUrl: `http://localhost:${PORT}/api`,
+      });
     });
 
     // Graceful shutdown
     const gracefulShutdown = (signal: string): void => {
-      console.log(`\n${signal} received. Closing HTTP server...`);
+      logger.info('Shutdown signal received', { signal });
+
       server.close(() => {
-        console.log('HTTP server closed.');
+        logger.info('HTTP server closed');
         process.exit(0);
       });
     };
@@ -29,19 +32,24 @@ const startServer = (): void => {
 
     // Handle uncaught exceptions
     process.on('uncaughtException', (error: Error) => {
-      console.error('Uncaught Exception:', error);
+      logger.error('Uncaught Exception', {
+        error: error.message,
+        stack: error.stack,
+      });
       process.exit(1);
     });
 
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (reason: unknown) => {
-      console.error('Unhandled Rejection:', reason);
+      logger.error('Unhandled Rejection', { reason });
       process.exit(1);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.error('Failed to start server', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     process.exit(1);
   }
 };
 
-startServer(); 
+startServer();
