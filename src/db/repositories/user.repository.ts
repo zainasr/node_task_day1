@@ -5,8 +5,14 @@ import jwt from 'jsonwebtoken';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { users, User } from '../schema/users';
 import * as schema from '../schema';
-import { CreateUserInput, UpdateUserInput } from '../../schemas/user.schema';
-import { OAuthProfileInput, JwtPayload } from '../../schemas/auth.schema';
+import {
+  CreateUserInput,
+  UpdateUserInput,
+} from '../../validations_types/user.schema';
+import {
+  OAuthProfileInput,
+  JwtPayload,
+} from '../../validations_types/auth.schema';
 import { env } from '../../config/env';
 
 import {

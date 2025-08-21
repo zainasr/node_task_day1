@@ -6,8 +6,8 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import {
   CreateProductInput,
   UpdateProductInput,
-} from '../schemas/product.schema';
-import { IdParamInput } from '../schemas/common.schema';
+} from '../validations_types/product.schema';
+import { IdParamInput } from '../validations_types/common.schema';
 
 export class ProductController {
   constructor(private readonly productService: ProductService) {}

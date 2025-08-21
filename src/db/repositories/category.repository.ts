@@ -8,7 +8,7 @@ import * as schema from '../schema';
 import {
   CreateCategoryInput,
   UpdateCategoryInput,
-} from '../../schemas/category.schema';
+} from '../../validations_types/category.schema';
 
 import {
   CategoryNotFoundError,
@@ -37,7 +37,9 @@ export class CategoryRepository {
       const responseData = CategoryResponses.getAll(result);
       sendSuccess(res, responseData);
     } catch (error) {
-      logger.error('Failed to fetch categories', { error: error instanceof Error ? error.message : 'Unknown error' });
+      logger.error('Failed to fetch categories', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
       throw new DatabaseError(
         'Failed to fetch categories from database',
         error,

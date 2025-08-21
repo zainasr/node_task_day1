@@ -3,7 +3,7 @@ import { ProductRepository } from '../db/repositories/product.repository';
 import {
   CreateProductInput,
   UpdateProductInput,
-} from '../schemas/product.schema';
+} from '../validations_types/product.schema';
 
 export class ProductService {
   constructor(private readonly productRepo: ProductRepository) {}

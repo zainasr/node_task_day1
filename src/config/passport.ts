@@ -2,7 +2,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { env } from './env';
 import { AuthService } from '../services/auth.service';
-import { OAuthProfileInput } from '../schemas/auth.schema';
+import { OAuthProfileInput } from '../validations_types/auth.schema';
 
 export const configurePassport = (authService: AuthService) => {
   passport.use(

@@ -8,7 +8,7 @@ import * as schema from '../schema';
 import {
   CreateProductInput,
   UpdateProductInput,
-} from '../../schemas/product.schema';
+} from '../../validations_types/product.schema';
 import {
   ProductNotFoundError,
   CategoryNotFoundError,

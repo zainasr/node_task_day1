@@ -5,9 +5,9 @@ import { Router } from 'express';
 import {
   createProductSchema,
   updateProductSchema,
-} from '../schemas/product.schema';
+} from '../validations_types/product.schema';
 import { productController as controller } from '../container';
-import { idParamSchema } from '../schemas/common.schema';
+import { idParamSchema } from '../validations_types/common.schema';
 import { validateBody, validateParams } from '../middleware/validation';
 
 const router = Router();

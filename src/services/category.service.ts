@@ -5,7 +5,7 @@ import { CategoryRepository } from '../db/repositories/category.repository';
 import {
   CreateCategoryInput,
   UpdateCategoryInput,
-} from '../schemas/category.schema';
+} from '../validations_types/category.schema';
 import logger from '../utils/logger';
 
 export class CategoryService {

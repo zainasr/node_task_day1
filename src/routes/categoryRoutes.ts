@@ -3,8 +3,8 @@ import { validateBody, validateParams } from '../middleware/validation';
 import {
   createCategorySchema,
   updateCategorySchema,
-} from '../schemas/category.schema';
-import { idParamSchema } from '../schemas/common.schema';
+} from '../validations_types/category.schema';
+import { idParamSchema } from '../validations_types/common.schema';
 import { categoryController as controller } from '../container';
 
 const router = Router();

@@ -3,8 +3,11 @@
 import { Response } from 'express';
 import { UserRepository } from '../db/repositories/user.repository';
 import { User } from '../db/schema/users';
-import { OAuthProfileInput, JwtPayload } from '../schemas/auth.schema';
-import { UpdateUserInput } from '../schemas/user.schema';
+import {
+  OAuthProfileInput,
+  JwtPayload,
+} from '../validations_types/auth.schema';
+import { UpdateUserInput } from '../validations_types/user.schema';
 
 export class AuthService {
   constructor(private readonly userRepository: UserRepository) {}

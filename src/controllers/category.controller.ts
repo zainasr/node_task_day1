@@ -6,8 +6,8 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import {
   CreateCategoryInput,
   UpdateCategoryInput,
-} from '../schemas/category.schema';
-import { IdParamInput } from '../schemas/common.schema';
+} from '../validations_types/category.schema';
+import { IdParamInput } from '../validations_types/common.schema';
 
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
