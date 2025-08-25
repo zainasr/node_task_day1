@@ -8,12 +8,14 @@ import {
   UpdateCategoryInput,
 } from '../validations_types/category.schema';
 import { IdParamInput } from '../validations_types/common.schema';
+import { PaginationQuery } from '../validations_types/common.schema';
 
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
-  getAll = asyncHandler(async (_req: Request, res: Response) => {
-    await this.categoryService.getAll(res);
+  getAll = asyncHandler(async (req: Request, res: Response) => {
+    const { page = 1, limit = 10 } = req.query as unknown as PaginationQuery;
+    await this.categoryService.getAll(res, page, limit);
   });
 
   getById = asyncHandler(async (req: Request, res: Response) => {

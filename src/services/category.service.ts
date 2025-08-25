@@ -11,9 +11,13 @@ import logger from '../utils/logger';
 export class CategoryService {
   constructor(private readonly categoryRepo: CategoryRepository) {}
 
-  async getAll(res: Response): Promise<void> {
+  async getAll(
+    res: Response,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<void> {
     logger.debug('CategoryService: Getting all categories');
-    return this.categoryRepo.findAll(res);
+    return this.categoryRepo.findAll(res, page, limit);
   }
 
   async getById(id: string, res: Response): Promise<void> {

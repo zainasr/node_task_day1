@@ -65,3 +65,21 @@ export const validateParams =
       next(error);
     }
   };
+
+export const validateQuery = (schema: ZodTypeAny  ) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    try {
+      const parsed = schema.parse(req.query);
+      req.query = parsed;
+      next();
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationDetails = error.errors.map((err) => ({
+          path: err.path.join('.') || 'query',
+          message: err.message,
+        }))
+        sendValidationError(res, validationDetails);
+        return;}}}
+      }
+
+      

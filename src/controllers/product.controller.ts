@@ -8,12 +8,21 @@ import {
   UpdateProductInput,
 } from '../validations_types/product.schema';
 import { IdParamInput } from '../validations_types/common.schema';
+import {
+ 
+  CursorPaginationQuery,
+} from '../validations_types/common.schema';
 
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
-  getAll = asyncHandler(async (_req: Request, res: Response) => {
-    await this.productService.getAll(res);
+  getAll = asyncHandler(async (req: Request, res: Response) => {
+    const {
+      limit = 10,
+      cursor,
+      direction = 'next',
+    } = req.query as unknown as CursorPaginationQuery;
+    await this.productService.getAll(res, limit, cursor, direction);
   });
 
   getById = asyncHandler(async (req: Request, res: Response) => {

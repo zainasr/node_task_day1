@@ -8,8 +8,13 @@ import {
 export class ProductService {
   constructor(private readonly productRepo: ProductRepository) {}
 
-  async getAll(res: Response): Promise<void> {
-    return this.productRepo.findAll(res);
+  async getAll(
+    res: Response,
+    limit: number = 10,
+    cursor?: string,
+    direction: 'next' | 'prev' = 'next'
+  ): Promise<void> {
+    return this.productRepo.findAll(res, limit, cursor, direction);
   }
 
   async getById(id: string, res: Response): Promise<void> {

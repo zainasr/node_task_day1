@@ -1,5 +1,5 @@
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc, lt, gt, or } from 'drizzle-orm';
 import { Response } from 'express';
 import { products } from '../schema/products';
 import { categories } from '../schema/categories';
@@ -17,18 +17,167 @@ import {
   DatabaseError,
 } from '../../common/errors';
 import { sendSuccess, ProductResponses } from '../../utils/response';
+import logger from '../../utils/logger';
+
+// Cursor pagination types
+interface CursorData {
+  id: string;
+  createdAt: string;
+}
+
+interface CursorPaginationResult<T> {
+  data: T[];
+  pagination: {
+    nextCursor?: string;
+    prevCursor?: string;
+    hasNext: boolean;
+    hasPrev: boolean;
+    limit: number;
+  };
+}
+
 export class ProductRepository {
   constructor(private readonly db: NodePgDatabase<typeof schema>) {}
 
   /**
-   * Get all products - handles everything including response
+   * Get all products with cursor pagination - handles everything including response
    */
-  async findAll(res: Response): Promise<void> {
+  async findAll(
+    res: Response,
+    limit: number = 10,
+    cursor?: string,
+    direction: 'next' | 'prev' = 'next'
+  ): Promise<void> {
     try {
-      const allProducts = await this.db.select().from(products);
-      const responseData = ProductResponses.getAll(allProducts);
+      logger.debug('Fetching products with cursor pagination', {
+        limit,
+        cursor: cursor ? 'present' : 'none',
+        direction,
+      });
+
+      // Validate limit
+      const validLimit = Math.min(Math.max(1, Math.floor(limit)), 50); // Max 50 per page
+
+      // Decode cursor if provided
+      let cursorData: CursorData | null = null;
+      if (cursor) {
+        try {
+          cursorData = JSON.parse(Buffer.from(cursor, 'base64').toString());
+        } catch (error) {
+          logger.warn('Invalid cursor provided, ignoring', { cursor });
+          cursorData = null;
+        }
+      }
+
+      // Build query with proper Drizzle syntax
+      let result: Product[];
+
+      if (cursorData) {
+        const cursorDate = new Date(cursorData.createdAt);
+
+        if (direction === 'next') {
+          // Get items after the cursor (newer items)
+          result = await this.db
+            .select()
+            .from(products)
+            .where(
+              or(
+                lt(products.createdAt, cursorDate),
+                and(
+                  eq(products.createdAt, cursorDate),
+                  lt(products.id, cursorData.id)
+                )
+              )
+            )
+            .orderBy(desc(products.createdAt), desc(products.id))
+            .limit(validLimit + 1);
+        } else {
+          // Get items before the cursor (older items)
+          result = await this.db
+            .select()
+            .from(products)
+            .where(
+              or(
+                gt(products.createdAt, cursorDate),
+                and(
+                  eq(products.createdAt, cursorDate),
+                  gt(products.id, cursorData.id)
+                )
+              )
+            )
+            .orderBy(desc(products.createdAt), desc(products.id))
+            .limit(validLimit + 1);
+        }
+      } else {
+        // No cursor - get latest items
+        result = await this.db
+          .select()
+          .from(products)
+          .orderBy(desc(products.createdAt), desc(products.id))
+          .limit(validLimit + 1);
+      }
+
+      // Check if there are more items
+      const hasMore = result.length > validLimit;
+      const items = hasMore ? result.slice(0, validLimit) : result;
+
+      // Generate cursors
+      let nextCursor: string | undefined;
+      let prevCursor: string | undefined;
+
+      if (items.length > 0) {
+        const firstItem = items[0];
+        const lastItem = items[items.length - 1];
+
+        // Next cursor (for next page)
+        if (hasMore && lastItem) {
+          nextCursor = Buffer.from(
+            JSON.stringify({
+              id: lastItem.id,
+              createdAt: lastItem.createdAt.toISOString(),
+            })
+          ).toString('base64');
+        }
+
+        // Previous cursor (for previous page)
+        if (cursorData && firstItem) {
+          prevCursor = Buffer.from(
+            JSON.stringify({
+              id: firstItem.id,
+              createdAt: firstItem.createdAt.toISOString(),
+            })
+          ).toString('base64');
+        }
+      }
+
+      // Build pagination metadata
+      const pagination: CursorPaginationResult<Product>['pagination'] = {
+        nextCursor: nextCursor as string,
+        prevCursor: prevCursor as string,
+        hasNext: hasMore,
+        hasPrev: !!cursorData,
+        limit: validLimit,
+      };
+
+      logger.info('Products fetched successfully with cursor pagination', {
+        limit: validLimit,
+        resultCount: items.length,
+        hasNext: hasMore,
+        hasPrev: !!cursorData,
+      });
+
+      const responseData = ProductResponses.getAllWithCursorPagination(
+        items,
+        pagination
+      );
       sendSuccess(res, responseData);
     } catch (error) {
+      logger.error('Failed to fetch products with cursor pagination', {
+        limit,
+        cursor: cursor ? 'present' : 'none',
+        direction,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
       throw new DatabaseError(
         'Failed to fetch products from database',
         error,

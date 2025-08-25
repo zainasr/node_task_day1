@@ -1,5 +1,5 @@
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq } from 'drizzle-orm';
+import { eq, count } from 'drizzle-orm';
 import { Response } from 'express';
 import { categories } from '../schema/categories';
 import { products } from '../schema/products';
@@ -20,24 +20,87 @@ import {
 import { sendSuccess, CategoryResponses } from '../../utils/response';
 import logger from '../../utils/logger';
 
+// Pagination types
+export interface PaginationParams {
+  page: number;
+  limit: number;
+}
+
+interface PaginationResult<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
 export class CategoryRepository {
   constructor(private readonly db: NodePgDatabase<typeof schema>) {}
 
   /**
-   * Get all categories - handles everything including response
+   * Get all categories with pagination - handles everything including response
    */
-  async findAll(res: Response): Promise<void> {
+  async findAll(
+    res: Response,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<void> {
     try {
-      logger.debug('Fetching all categories');
-      const result = await this.db.select().from(categories);
+      logger.debug('Fetching categories with pagination', { page, limit });
 
-      logger.info('Categories fetched successfully', {
-        count: result.length,
+      // Validate pagination parameters
+      const validPage = Math.max(1, Math.floor(page));
+      const validLimit = Math.min(Math.max(1, Math.floor(limit)), 100); // Max 100 per page
+
+      // Get total count for pagination metadata
+      const totalResult = await this.db
+        .select({ count: count() })
+        .from(categories);
+      const total = totalResult[0]?.count || 0;
+
+      // Calculate pagination values
+      const totalPages = Math.ceil(total / validLimit);
+      const offset = (validPage - 1) * validLimit;
+
+      // Get paginated data
+      const result = await this.db
+        .select()
+        .from(categories)
+        .orderBy(categories.createdAt)
+        .limit(validLimit)
+        .offset(offset);
+
+      // Build pagination metadata
+      const pagination: PaginationResult<Category>['pagination'] = {
+        page: validPage,
+        limit: validLimit,
+        total,
+        totalPages,
+        hasNext: validPage < totalPages,
+        hasPrev: validPage > 1,
+      };
+
+      logger.info('Categories fetched successfully with pagination', {
+        page: validPage,
+        limit: validLimit,
+        total,
+        totalPages,
+        resultCount: result.length,
       });
-      const responseData = CategoryResponses.getAll(result);
+
+      const responseData = CategoryResponses.getAllWithPagination(
+        result,
+        pagination
+      );
       sendSuccess(res, responseData);
     } catch (error) {
-      logger.error('Failed to fetch categories', {
+      logger.error('Failed to fetch categories with pagination', {
+        page,
+        limit,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw new DatabaseError(

@@ -8,6 +8,7 @@ export type ApiResponse<T> = {
   data?: T;
   error?: string;
   errors?: Array<{ path: string; message: string }>;
+  pagination?: any; // Add pagination support
 };
 
 /**
@@ -17,6 +18,7 @@ export interface ResponseData<T = any> {
   data: T;
   message: string;
   statusCode: number;
+  pagination?: any; // Add pagination support
 }
 
 /**
@@ -30,6 +32,7 @@ export const sendSuccess = <T>(
     success: true,
     message: responseData.message,
     data: responseData.data,
+    ...(responseData.pagination && { pagination: responseData.pagination }), // Include pagination if present
   };
   return res.status(responseData.statusCode).json(response);
 };
@@ -116,12 +119,41 @@ export const sendConflictError = (
   return res.status(409).json(response);
 };
 
+export interface PaginationMetadata {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface CursorPaginationMetadata {
+  nextCursor?: string;
+  prevCursor?: string;
+  hasNext: boolean;
+  hasPrev: boolean;
+  limit: number;
+}
+
 // Response helper functions for different entities and operations
 export const CategoryResponses = {
   getAll: (data: any[]) => ({
     data,
     message: 'Categories retrieved successfully',
     statusCode: 200,
+  }),
+  /**
+   * Get all categories with pagination metadata
+   */
+  getAllWithPagination: (
+    categories: any[],
+    pagination: PaginationMetadata
+  ) => ({
+    data: categories,
+    message: `Categories retrieved successfully (Page ${pagination.page} of ${pagination.totalPages})`,
+    statusCode: 200,
+    pagination,
   }),
 
   getById: (data: any) => ({
@@ -160,6 +192,18 @@ export const ProductResponses = {
     data,
     message: 'Products retrieved successfully',
     statusCode: 200,
+  }),
+  /**
+   * Get all products with cursor pagination metadata
+   */
+  getAllWithCursorPagination: (
+    products: any[],
+    pagination: CursorPaginationMetadata
+  ) => ({
+    data: products,
+    message: `Products retrieved successfully (${products.length} items)`,
+    statusCode: 200,
+    pagination, // This will be included in the response
   }),
 
   getById: (data: any) => ({

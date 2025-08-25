@@ -8,11 +8,16 @@ import {
 } from '../validations_types/product.schema';
 import { productController as controller } from '../container';
 import { idParamSchema } from '../validations_types/common.schema';
-import { validateBody, validateParams } from '../middleware/validation';
+import { cursorPaginationQuerySchema } from '../validations_types/common.schema';
+import {
+  validateBody,
+  validateParams,
+  validateQuery,
+} from '../middleware/validation';
 
 const router = Router();
 
-router.get('/', controller.getAll);
+router.get('/', validateQuery(cursorPaginationQuerySchema), controller.getAll);
 router.get('/:id', validateParams(idParamSchema), controller.getById);
 router.get(
   '/:id/category',
