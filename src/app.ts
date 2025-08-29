@@ -9,6 +9,7 @@ import { configurePassport } from './config/passport';
 import { authService } from './container';
 import { healthCheck } from './utils/health';
 import logger from './utils/logger';
+import stripeWebhookRoutes from './routes/stripeWebhookRoutes';
 
 const createApp = () => {
   const app = express();
@@ -16,6 +17,9 @@ const createApp = () => {
   // Security middleware
   app.use(helmet());
   app.use(cors());
+
+  // Stripe webhook MUST be mounted before body parser
+  app.use('/api/stripe', stripeWebhookRoutes);
 
   // Request logging (before other middleware)
   app.use(requestLogger);

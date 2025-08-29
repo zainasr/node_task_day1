@@ -61,6 +61,15 @@ const envSchema = z.object({
 
   // Frontend URL for redirects (prod usage)
   FRONTEND_URL: z.string().url().default('http://localhost:3000'),
+
+  // Stripe
+  STRIPE_SECRET_KEY: z.string().min(1),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1),
+  CHECKOUT_SUCCESS_URL: z
+    .string()
+    .url()
+    .default('http://localhost:3000/success'),
+  CHECKOUT_CANCEL_URL: z.string().url().default('http://localhost:3000/cancel'),
 });
 
 // Parse and validate environment variables

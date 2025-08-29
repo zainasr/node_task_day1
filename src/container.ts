@@ -11,16 +11,21 @@ import { CategoryController } from './controllers/category.controller';
 import { ProductController } from './controllers/product.controller';
 import { AuthController } from './controllers/auth.controller';
 import { AuthMiddleware } from './middleware/auth.middleware';
+import { PaymentRepository } from './db/repositories/payment.repository';
+import { PaymentService } from './services/payment.service';
+import { PaymentController } from './controllers/payment.controller';
 
 // Repositories
 const categoryRepository = new CategoryRepository(db);
 const productRepository = new ProductRepository(db);
 const userRepository = new UserRepository(db);
+const paymentRepository = new PaymentRepository(db);
 
 // Services
 const categoryService = new CategoryService(categoryRepository);
 const productService = new ProductService(productRepository);
 export const authService = new AuthService(userRepository);
+const paymentService = new PaymentService(paymentRepository);
 
 // Middleware
 export const authMiddleware = new AuthMiddleware(authService);
@@ -29,3 +34,4 @@ export const authMiddleware = new AuthMiddleware(authService);
 export const categoryController = new CategoryController(categoryService);
 export const productController = new ProductController(productService);
 export const authController = new AuthController(authService);
+export const paymentController = new PaymentController(paymentService);
